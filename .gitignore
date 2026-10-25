@@ -1,0 +1,21 @@
+# ===== 第三方库 cutlass：不上传 =====
+project/third_party/cutlass-main/
+project/third_party/cutlass-main.zip
+
+# ===== 编译产物 / 二进制 =====
+*.o
+*.out
+**/build/
+project/run_app
+/test
+project/test/test5_run
+project/test/test_gemm_ptx
+project/test/test_gemm_ptx_full
+
+# ===== Profiler / 数据库报告 =====
+*.ncu-rep
+*.nsys-rep
+*.sqlite
+
+# ===== IDE 临时文件 =====
+.vscode/

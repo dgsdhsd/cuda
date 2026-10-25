@@ -1,0 +1,18 @@
+ncu -f --target-processes all --launch-skip 10 --launch-count 1 --set full -o profile_result ./run_app
+
+ncu --import profile_result.ncu-rep > profile_result.txt
+
+
+ncu -f --target-processes all \
+    --profile-from-start off \
+    --set full \
+    -o cublas_baseline \
+    ./run_app
+
+
+sudo nvidia-smi -lgc 3090,3090   # 锁定 SM 频率到最大 3090 MHz
+sudo nvidia-smi -lmc 14001,14001 # 锁定显存频率
+sudo nvidia-smi -rgc
+sudo nvidia-smi -rmc
+
+ncu --import bank_conflict_test.ncu-rep > bank_conflict_test.txt

@@ -1,0 +1,46 @@
+第286行，cp_async_cg(&s_a[write_stage][a_tile_row + i][a_tile_col4], A + (a_tile_row + i) * K + a_tile_col4);
+这里对A在显存的读取是否冲突，显存最小传输单位为32字节。
+但这里合并传输最小为64字节，不应该不存在明显冲突。
+
+对SA的写入，这里应该存在8路冲突如何解决，以及是否解决？
+这里可能还不止是8路冲突，8冲突指的是一个warp内的冲突，
+只不过被显存带宽明显拉掉。
+
+cp_async_cg(&s_b[write_stage][b_tile_row + i][b_tile_col4], B + (b_tile_row + i) * N + b_tile_col4);
+对SB的写入，并未出现明显的冲突，
+
+对共享内存的写入和显存的读出都无明显冲突。
+
+现在写#pragma unroll是不是会自动展开循环，不需要人为写了？
+
+用FMA是能减少寄存器数量，但对性能是否有影响
+
+        #pragma unroll
+        for (int k = 0; k < BK; ++k) {
+            #pragma unroll
+            for (int i = 0; i < TM; ++i) {
+                float a_val = s_a[read_stage][thread_row + i][k];
+                #pragma unroll
+                for (int j = 0; j < TN; ++j) {
+                    accum[i][j] += a_val * s_b[read_stage][k][thread_col + j];
+                }
+            }
+        }
+s_a的读取发生两路冲突，但确实是16路广播机制。s_b的读取发生4路冲突。
+
+        for (int j = 0; j < TN; j += 4) {
+            int global_c_row = block_row + thread_row + i;
+            int global_c_col = block_col + thread_col + j;
+
+            if (global_c_row < M && global_c_col + 3 < N) {
+                float4 val;
+                val.x = accum[i][j + 0];
+                val.y = accum[i][j + 1];
+                val.z = accum[i][j + 2];
+                val.w = accum[i][j + 3];
+
+                *reinterpret_cast<float4*>(&C[global_c_row * N + global_c_col]) = val;
+            }
+
+
+平衡硬件，

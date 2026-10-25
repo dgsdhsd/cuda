@@ -1,0 +1,210 @@
+
+
+// 辅助内联函数：调用 PTX cp.async 指令
+__device__ __forceinline__ void cp_async_cg(void* smem_ptr, const void* glob_ptr) {
+    unsigned int smem_addr = __cvta_generic_to_shared(smem_ptr);
+    asm volatile("cp.async.cg.shared.global [%0], [%1], 16;\n"
+                 :
+                 : "r"(smem_addr), "l"(glob_ptr));
+}
+
+__global__ void __launch_bounds__(256, 2) sgemm_2d_block_tiling_async_db(
+    int M, int N, int K,
+    const float* __restrict__ A,
+    const float* __restrict__ B,
+    float* __restrict__ C) 
+{
+    // -------------------------------------------------------------------------
+    // 1. 基础分块参数定义
+    // -------------------------------------------------------------------------
+    constexpr int BM = 128;
+    constexpr int BN = 128;
+    constexpr int BK = 16;  // 扩大 BK 以完美适配 float4 (16B)
+    constexpr int TM = 8;
+    constexpr int TN = 8;
+
+    // 线程块与片上共享内存 (双缓冲区)
+    // s_a: 2 x 128 x 16
+    // s_b: 2 x 16 x 128
+    __shared__ float s_a[2][BM][BK];
+    __shared__ float s_b[2][BK][BN];
+
+    const int tid = threadIdx.x; // 0 ~ 255
+
+    // 计算当前线程负责的 8x8 计算 Tile 在 Block 内的起始位置
+    const int thread_row = (tid / 16) * TM; // 0, 8, 16 ... 120
+    const int thread_col = (tid % 16) * TN; // 0, 8, 16 ... 120
+
+    const int block_row = blockIdx.y * BM;
+    const int block_col = blockIdx.x * BN;
+
+    // 调整全局基指针到当前 Block 起始位置
+    A += block_row * K;
+    B += block_col;
+
+    // 累加寄存器
+    float accum[TM][TN] = {0.0f};
+
+    // -------------------------------------------------------------------------
+    // 2. Cooperative Load 索引映射 (按 float4 计数)
+    // -------------------------------------------------------------------------
+    // s_a (128 x 16) = 128 x 4 float4. 256个线程 -> 512个float4 -> 每人搬2个 float4
+    const int a_tile_row = tid / 4;        // 0 ~ 63
+    const int a_tile_col4 = (tid % 4) * 4; // 0, 4, 8, 12
+
+    // s_b (16 x 128) = 16 x 32 float4. 256个线程 -> 512个float4 -> 每人搬2个 float4
+    const int b_tile_row = tid / 32;       // 0 ~ 7
+    const int b_tile_col4 = (tid % 32) * 4;// 0, 4, 8 ... 124
+
+    // -------------------------------------------------------------------------
+    // 3. 流水线预热 (Prologue): 异步加载第 0 块数据到 Buffer 0
+    // -------------------------------------------------------------------------
+    int write_stage = 0;
+
+    // 预加载 A (Buffer 0)
+    #pragma unroll
+    for (int i = 0; i < BM; i += 64) {
+        int row = a_tile_row + i;
+        int col = a_tile_col4;
+        const float* src = A + row * K + col;
+        void* dst = &s_a[write_stage][row][col];
+        
+        // 使用 cp.async 将 16 字节(float4) 异步发往 Shared Memory
+        cp_async_cg(dst, src);
+    }
+
+    // 预加载 B (Buffer 0)
+    #pragma unroll
+    for (int i = 0; i < BK; i += 8) {
+        int row = b_tile_row + i;
+        int col = b_tile_col4;
+        const float* src = B + row * N + col;
+        void* dst = &s_b[write_stage][row][col];
+
+        cp_async_cg(dst, src);
+    }
+
+    // 提交异步加载组并等待完成
+    asm volatile("cp.async.commit_group;\n");   //创建标识
+    asm volatile("cp.async.wait_group 0;\n");   //看看group 0是不是完成了，完成了执行以下语句。
+    __syncthreads();
+
+    // -------------------------------------------------------------------------
+    // 4. Main Loop: 乒乓双缓冲计算与搬运重叠
+    // -------------------------------------------------------------------------
+    for (int k_step = BK; k_step < K; k_step += BK) {
+        // 推进全局指针
+        A += BK;
+        B += BK * N;
+
+        // 切换写入缓冲区索引 (0 -> 1, 1 -> 0)
+        write_stage ^= 1;
+
+        // --- Step 4A: 异步发射下一轮 (k_step) 数据到 write_stage 缓冲区 ---
+        #pragma unroll
+        for (int i = 0; i < BM; i += 64) {
+            int row = a_tile_row + i;
+            int col = a_tile_col4;
+            cp_async_cg(&s_a[write_stage][row][col], A + row * K + col);
+        }
+
+        #pragma unroll
+        for (int i = 0; i < BK; i += 8) {
+            int row = b_tile_row + i;
+            int col = b_tile_col4;
+            cp_async_cg(&s_b[write_stage][row][col], B + row * N + col);
+        }
+
+        // 提交当前发射的异步加载组
+        asm volatile("cp.async.commit_group;\n");
+
+        // --- Step 4B: 计算当前 read_stage 缓冲区的数据 ---
+        int read_stage = write_stage ^ 1;
+
+        #pragma unroll
+        for (int k = 0; k < BK; ++k) {
+            float a_reg[TM];
+            float b_reg[TN];
+
+            #pragma unroll
+            for (int i = 0; i < TM; ++i) {
+                a_reg[i] = s_a[read_stage][thread_row + i][k];
+            }
+            #pragma unroll
+            for (int j = 0; j < TN; ++j) {
+                b_reg[j] = s_b[read_stage][k][thread_col + j];
+            }
+
+            #pragma unroll
+            for (int i = 0; i < TM; ++i) {
+                #pragma unroll
+                for (int j = 0; j < TN; ++j) {
+                    accum[i][j] += a_reg[i] * b_reg[j];
+                }
+            }
+        }
+
+        // --- Step 4C: 等待下一次所需的数据传输完成 ---
+        // wait_group 0 表示等待所有 commit 的组全部完成
+        asm volatile("cp.async.wait_group 0;\n");
+        __syncthreads();
+    }
+
+    // -------------------------------------------------------------------------
+    // 5. Epilogue Loop: 处理最后一轮留在 Buffer 里的数据
+    // -------------------------------------------------------------------------
+    int read_stage = write_stage;
+    #pragma unroll
+    for (int k = 0; k < BK; ++k) {
+        float a_reg[TM];
+        float b_reg[TN];
+
+        #pragma unroll
+        for (int i = 0; i < TM; ++i) {
+            a_reg[i] = s_a[read_stage][thread_row + i][k];
+        }
+        #pragma unroll
+        for (int j = 0; j < TN; ++j) {
+            b_reg[j] = s_b[read_stage][k][thread_col + j];
+        }
+
+        #pragma unroll
+        for (int i = 0; i < TM; ++i) {
+            #pragma unroll
+            for (int j = 0; j < TN; ++j) {
+                accum[i][j] += a_reg[i] * b_reg[j];
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // 6. 写回 Global Memory (使用 float4 向量化写回)
+    // -------------------------------------------------------------------------
+    #pragma unroll
+    for (int i = 0; i < TM; ++i) {
+        #pragma unroll
+        for (int j = 0; j < TN; j += 4) {
+            int global_c_row = block_row + thread_row + i;
+            int global_c_col = block_col + thread_col + j;
+
+            if (global_c_row < M && global_c_col + 3 < N) {
+                float4 val;
+                val.x = accum[i][j + 0];
+                val.y = accum[i][j + 1];
+                val.z = accum[i][j + 2];
+                val.w = accum[i][j + 3];
+
+                *reinterpret_cast<float4*>(&C[global_c_row * N + global_c_col]) = val;
+            } else {
+                // 边界回退单元素写入
+                #pragma unroll
+                for (int vec = 0; vec < 4; ++vec) {
+                    if (global_c_row < M && (global_c_col + vec) < N) {
+                        C[global_c_row * N + global_c_col + vec] = accum[i][j + vec];
+                    }
+                }
+            }
+        }
+    }
+}
+

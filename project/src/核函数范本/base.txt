@@ -1,0 +1,123 @@
+__global__ void sgemm_2d_block_tiling(
+    int M, int N, int K,
+    const float* __restrict__ A,
+    const float* __restrict__ B,
+    float* __restrict__ C) 
+{
+    // 基础分块参数定义 (BM=128, BN=128, BK=8, TM=8, TN=8)
+    constexpr int BM = 128;
+    constexpr int BN = 128;
+    constexpr int BK = 8;
+    constexpr int TM = 8;
+    constexpr int TN = 8;
+
+    // 线程块与片上共享内存 (SRAM)
+    __shared__ float s_a[BM][BK]; // 128 x 8
+    __shared__ float s_b[BK][BN]; // 8 x 128
+
+    // 当前线程在 Block 内的 1D 编号 (0 ~ 255)
+    const int tid = threadIdx.x;
+
+    // 1. 计算当前线程负责的 C 矩阵 8x8 寄存器瓦片 (Tile) 的起始行列索引
+    // 256 个线程排成 16x16 阵列，每个线程负责 TM=8, TN=8
+    const int thread_row = (tid / 16) * TM; // 0, 8, 16 ... 120
+    const int thread_col = (tid % 16) * TN; // 0, 8, 16 ... 120
+
+    // 当前 Block 负责的全局 C 矩阵物理基地址偏移
+    const int block_row = blockIdx.y * BM;
+    const int block_col = blockIdx.x * BN;
+
+    // 将 A 和 B 的基指针拉到当前 Block 负责的起始位置
+    A += block_row * K;
+    B += block_col;
+
+    // 线程私有寄存器，用于保存 8x8 累加中间值
+    float accum[TM][TN] = {0.0f};
+
+    // 协同搬运 Shared Memory 的索引计算 (256个线程协同搬运 128x8 = 1024 个元素)
+    // 每个线程搬运 4 个 float
+    const int a_tile_row = tid / BK;       // 0 ~ 31
+    const int a_tile_col = tid % BK;       // 0 ~ 7
+    const int b_tile_row = tid / BN;       // 0 ~ 1
+    const int b_tile_col = tid % BN;       // 0 ~ 127
+
+    // -------------------------------------------------------------------------
+    // 2. Main Loop: 沿着 K 轴以 BK=8 步长推进累加
+    // -------------------------------------------------------------------------
+    for (int k_step = 0; k_step < K; k_step += BK) {
+
+        // --- Step A: 协同加载 (Cooperative Load) 显存数据到 Shared Memory ---
+        // 加载 A (128x8): 每跨 32 行搬一次，循环 4 次
+        #pragma unroll
+        for (int i = 0; i < BM; i += 32) {
+            int cur_row = block_row + a_tile_row + i;
+            int cur_col = k_step + a_tile_col;
+            if (cur_row < M && cur_col < K) {
+                s_a[a_tile_row + i][a_tile_col] = A[(a_tile_row + i) * K + a_tile_col];
+            } else {
+                s_a[a_tile_row + i][a_tile_col] = 0.0f; // 边界 Padding 0
+            }
+        }
+
+        // 加载 B (8x128): 每跨 2 行搬一次，循环 4 次
+        #pragma unroll
+        for (int i = 0; i < BK; i += 2) {
+            int cur_row = k_step + b_tile_row + i;
+            int cur_col = block_col + b_tile_col;
+            if (cur_row < K && cur_col < N) {
+                s_b[b_tile_row + i][b_tile_col] = B[(b_tile_row + i) * N + b_tile_col];
+            } else {
+                s_b[b_tile_row + i][b_tile_col] = 0.0f; // 边界 Padding 0
+            }
+        }
+
+        __syncthreads(); // 确保 SRAM 搬运完毕
+
+        // --- Step B: 计算 8x8 外积并累加到寄存器 ---
+        #pragma unroll
+        for (int k = 0; k < BK; ++k) {
+            // 将 SRAM 数据预加载到寄存器缓存，减少 SRAM 读冲突
+            float a_reg[TM];
+            float b_reg[TN];
+
+            #pragma unroll
+            for (int i = 0; i < TM; ++i) {
+                a_reg[i] = s_a[thread_row + i][k];
+            }
+            #pragma unroll
+            for (int j = 0; j < TN; ++j) {
+                b_reg[j] = s_b[k][thread_col + j];
+            }
+
+            // 外积累加
+            #pragma unroll
+            for (int i = 0; i < TM; ++i) {
+                #pragma unroll
+                for (int j = 0; j < TN; ++j) {
+                    accum[i][j] += a_reg[i] * b_reg[j];
+                }
+            }
+        }
+
+        __syncthreads(); // 准备下一轮 SRAM 加载
+
+        // 推进 A 和 B 的全局指针
+        A += BK;
+        B += BK * N;
+    }
+
+    // -------------------------------------------------------------------------
+    // 3. Epilogue: 将 8x8 寄存器结果写回 Global Memory
+    // -------------------------------------------------------------------------
+    #pragma unroll
+    for (int i = 0; i < TM; ++i) {
+        #pragma unroll
+        for (int j = 0; j < TN; ++j) {
+            int global_c_row = block_row + thread_row + i;
+            int global_c_col = block_col + thread_col + j;
+            if (global_c_row < M && global_c_col < N) {
+                C[global_c_row * N + global_c_col] = accum[i][j];
+            }
+        }
+    }
+}

@@ -1,0 +1,578 @@
+[548] run_app@127.0.0.1
+  sgemm_2d_block_tiling(int, int, int, const float *, const float *, float *) (32, 8, 1)x(256, 1, 1), Context 1, Stream 16, Device 0, CC 12.0
+  Metric Name                                                                                    Metric Unit         Metric Value
+  ------------------------------------------------------------------------------------------ --------------- --------------------
+  c2clink__enabled_mask                                                                                                         0
+  c2clink__present                                                                                                              0
+  derived__pct_occupancy_per_barrier_count                                                                                    621
+  derived__pct_occupancy_per_block_size                                                                    %                  874
+  derived__pct_occupancy_per_register_count                                                       %/register                10252
+  derived__pct_occupancy_per_shared_mem_size                                                         %/Kbyte                 4.29
+  derived_tempMetric0                                                                                                       30400
+  device__attribute_architecture                                                                                              432
+  device__attribute_async_engine_count                                                                                          1
+  device__attribute_can_flush_remote_writes                                                                                     0
+  device__attribute_can_map_host_memory                                                                                         1
+  device__attribute_can_tex2d_gather                                                                                            1
+  device__attribute_can_use_64_bit_stream_mem_ops                                                                               1
+  device__attribute_can_use_64_bit_stream_mem_ops_v1                                                                            0
+  device__attribute_can_use_host_pointer_for_registered_mem                                                                     0
+  device__attribute_can_use_stream_mem_ops_v1                                                                                   0
+  device__attribute_can_use_stream_wait_value_nor                                                                               1
+  device__attribute_can_use_stream_wait_value_nor_v1                                                                            0
+  device__attribute_chip                                                                                                      437
+  device__attribute_clock_rate                                                                                            2542000
+  device__attribute_cluster_launch                                                                                              1
+  device__attribute_compute_capability_major                                                                                   12
+  device__attribute_compute_capability_minor                                                                                    0
+  device__attribute_compute_mode                                                                                                0
+  device__attribute_compute_preemption_supported                                                                                1
+  device__attribute_concurrent_kernels                                                                                          1
+  device__attribute_concurrent_managed_access                                                                                   0
+  device__attribute_confidential_computing_mode                                                                             No-CC
+  device__attribute_cooperative_launch                                                                                          1
+  device__attribute_cooperative_multi_device_launch                                                                             0
+  device__attribute_deferred_mapping_cuda_array_supported                                                                       1
+  device__attribute_device_index                                                                                                0
+  device__attribute_direct_managed_mem_access_from_host                                                                         0
+  device__attribute_display_name                                                                               NVIDIA GeForce RTX
+                                                                                                                             5070
+  device__attribute_dma_buf_supported                                                                                           0
+  device__attribute_ecc_enabled                                                                                                 0
+  device__attribute_fb_bus_width                                                                                              192
+  device__attribute_fbp_count                                                                                                   3
+  device__attribute_generic_compression_supported                                                                               1
+  device__attribute_global_l1_cache_supported                                                                                   1
+  device__attribute_global_memory_bus_width                                                                                   192
+  device__attribute_gpu_direct_rdma_flush_writes_options                                                                        0
+  device__attribute_gpu_direct_rdma_supported                                                                                   0
+  device__attribute_gpu_direct_rdma_with_cuda_vmm_supported                                                                     0
+  device__attribute_gpu_direct_rdma_writes_ordering                                                                           100
+  device__attribute_gpu_overlap                                                                                                 1
+  device__attribute_gpu_pci_device_id                                                                                   788795614
+  device__attribute_gpu_pci_ext_device_id                                                                                   12036
+  device__attribute_gpu_pci_ext_downstream_link_rate                                                                        32000
+  device__attribute_gpu_pci_ext_downstream_link_width                                                                          16
+  device__attribute_gpu_pci_ext_gen                                                                                             4
+  device__attribute_gpu_pci_ext_gpu_gen                                                                                         4
+  device__attribute_gpu_pci_ext_gpu_link_rate                                                                               32000
+  device__attribute_gpu_pci_ext_gpu_link_width                                                                                 16
+  device__attribute_gpu_pci_revision_id                                                                                       161
+  device__attribute_gpu_pci_sub_system_id                                                                               542971761
+  device__attribute_handle_type_fabric_supported                                                                                0
+  device__attribute_handle_type_posix_file_descriptor_supported                                                                 1
+  device__attribute_handle_type_win32_handle_supported                                                                          0
+  device__attribute_handle_type_win32_kmt_handle_supported                                                                      0
+  device__attribute_host_native_atomic_supported                                                                                0
+  device__attribute_host_numa_id                                                                                                0
+  device__attribute_host_register_supported                                                                                     1
+  device__attribute_implementation                                                                                            437
+  device__attribute_integrated                                                                                                  0
+  device__attribute_ipc_event_supported                                                                                         1
+  device__attribute_kernel_exec_timeout                                                                                         1
+  device__attribute_l2_cache_size                                                                                        50331648
+  device__attribute_l2s_count                                                                                                  24
+  device__attribute_limits_max_cta_per_sm                                                                                      24
+  device__attribute_limits_num_tpcs                                                                                            24
+  device__attribute_local_l1_cache_supported                                                                                    1
+  device__attribute_managed_memory                                                                                              1
+  device__attribute_max_access_policy_window_size                                                                       134217728
+  device__attribute_max_block_dim_x                                                                                          1024
+  device__attribute_max_block_dim_y                                                                                          1024
+  device__attribute_max_block_dim_z                                                                                            64
+  device__attribute_max_blocks_per_multiprocessor                                                                              24
+  device__attribute_max_gpu_frequency_khz                                                                                 2542000
+  device__attribute_max_grid_dim_x                                                                                     2147483647
+  device__attribute_max_grid_dim_y                                                                                          65535
+  device__attribute_max_grid_dim_z                                                                                          65535
+  device__attribute_max_ipc_per_multiprocessor                                                                                  4
+  device__attribute_max_ipc_per_scheduler                                                                                       1
+  device__attribute_max_mem_frequency_khz                                                                                14001000
+  device__attribute_max_persisting_l2_cache_size                                                                         31457280
+  device__attribute_max_pitch                                                                                          2147483647
+  device__attribute_max_registers_per_block                                                                                 65536
+  device__attribute_max_registers_per_multiprocessor                                                                        65536
+  device__attribute_max_registers_per_thread                                                                                  255
+  device__attribute_max_shared_memory_per_block                                                                             49152
+  device__attribute_max_shared_memory_per_block_optin                                                                      101376
+  device__attribute_max_shared_memory_per_multiprocessor                                                                   102400
+  device__attribute_max_threads_per_block                                                                                    1024
+  device__attribute_max_threads_per_multiprocessor                                                                           1536
+  device__attribute_max_warps_per_multiprocessor                                                                               48
+  device__attribute_max_warps_per_scheduler                                                                                    12
+  device__attribute_maximum_surface1d_layered_layers                                                                         2048
+  device__attribute_maximum_surface1d_layered_width                                                                         32768
+  device__attribute_maximum_surface1d_width                                                                                 32768
+  device__attribute_maximum_surface2d_height                                                                                65536
+  device__attribute_maximum_surface2d_layered_height                                                                        32768
+  device__attribute_maximum_surface2d_layered_layers                                                                         2048
+  device__attribute_maximum_surface2d_layered_width                                                                         32768
+  device__attribute_maximum_surface2d_width                                                                                131072
+  device__attribute_maximum_surface3d_depth                                                                                 16384
+  device__attribute_maximum_surface3d_height                                                                                16384
+  device__attribute_maximum_surface3d_width                                                                                 16384
+  device__attribute_maximum_surfacecubemap_layered_layers                                                                    2046
+  device__attribute_maximum_surfacecubemap_layered_width                                                                    32768
+  device__attribute_maximum_surfacecubemap_width                                                                            32768
+  device__attribute_maximum_texture1d_layered_layers                                                                         2048
+  device__attribute_maximum_texture1d_layered_width                                                                         32768
+  device__attribute_maximum_texture1d_linear_width                                                                      268435456
+  device__attribute_maximum_texture1d_mipmapped_width                                                                       32768
+  device__attribute_maximum_texture1d_width                                                                                131072
+  device__attribute_maximum_texture2d_gather_height                                                                         32768
+  device__attribute_maximum_texture2d_gather_width                                                                          32768
+  device__attribute_maximum_texture2d_height                                                                                65536
+  device__attribute_maximum_texture2d_layered_height                                                                        32768
+  device__attribute_maximum_texture2d_layered_layers                                                                         2048
+  device__attribute_maximum_texture2d_layered_width                                                                         32768
+  device__attribute_maximum_texture2d_linear_height                                                                         65000
+  device__attribute_maximum_texture2d_linear_pitch                                                                        2097120
+  device__attribute_maximum_texture2d_linear_width                                                                         131072
+  device__attribute_maximum_texture2d_mipmapped_height                                                                      32768
+  device__attribute_maximum_texture2d_mipmapped_width                                                                       32768
+  device__attribute_maximum_texture2d_width                                                                                131072
+  device__attribute_maximum_texture3d_depth                                                                                 16384
+  device__attribute_maximum_texture3d_depth_alternate                                                                       32768
+  device__attribute_maximum_texture3d_height                                                                                16384
+  device__attribute_maximum_texture3d_height_alternate                                                                       8192
+  device__attribute_maximum_texture3d_width                                                                                 16384
+  device__attribute_maximum_texture3d_width_alternate                                                                        8192
+  device__attribute_maximum_texturecubemap_layered_layers                                                                    2046
+  device__attribute_maximum_texturecubemap_layered_width                                                                    32768
+  device__attribute_maximum_texturecubemap_width                                                                            32768
+  device__attribute_mem_sync_domain_count                                                                                       4
+  device__attribute_memory_clock_rate                                                                                    14001000
+  device__attribute_memory_pools_supported                                                                                      1
+  device__attribute_mempool_supported_handle_types                                                                              0
+  device__attribute_mps_enabled                                                                                                 0
+  device__attribute_multi_gpu_board                                                                                             0
+  device__attribute_multi_gpu_board_group_id                                                                                    0
+  device__attribute_multicast_supported                                                                                         0
+  device__attribute_multiprocessor_count                                                                                       48
+  device__attribute_num_l2s_per_fbp                                                                                             8
+  device__attribute_num_schedulers_per_multiprocessor                                                                           4
+  device__attribute_num_tex_per_multiprocessor                                                                                  1
+  device__attribute_numa_config                                                                                                 0
+  device__attribute_pageable_memory_access                                                                                      0
+  device__attribute_pageable_memory_access_uses_host_page_tables                                                                0
+  device__attribute_pci_bus_id                                                                                                  1
+  device__attribute_pci_device_id                                                                                               0
+  device__attribute_pci_domain_id                                                                                               0
+  device__attribute_ram_location                                                                                                1
+  device__attribute_ram_type                                                                                                    0
+  device__attribute_reserved_shared_memory_per_block                                                                         1024
+  device__attribute_sass_level                                                                                                 12
+  device__attribute_single_to_double_precision_perf_ratio                                                                      64
+  device__attribute_sparse_cuda_array_supported                                                                                 1
+  device__attribute_stream_priorities_supported                                                                                 1
+  device__attribute_surface_alignment                                                                                         512
+  device__attribute_tcc_driver                                                                                                  0
+  device__attribute_tensor_map_access_supported                                                                                 1
+  device__attribute_texture_alignment                                                                                         512
+  device__attribute_texture_pitch_alignment                                                                                    32
+  device__attribute_total_constant_memory                                                                                   65536
+  device__attribute_total_memory                                                                                      12820480000
+  device__attribute_unified_addressing                                                                                          1
+  device__attribute_unified_function_pointers                                                                                   1
+  device__attribute_virtual_address_management_supported                                                                        1
+  device__attribute_warp_size                                                                                                  32
+  dram__cycles_active.avg                                                                              cycle           4849621.33
+  dram__cycles_active.avg.pct_of_peak_sustained_elapsed                                                    %                11.60
+  dram__cycles_active.max                                                                              cycle              4851456
+  dram__cycles_active.max.pct_of_peak_sustained_elapsed                                                    %                11.60
+  dram__cycles_active.min                                                                              cycle              4848416
+  dram__cycles_active.min.pct_of_peak_sustained_elapsed                                                    %                11.59
+  dram__cycles_active.sum                                                                              cycle             29097728
+  dram__cycles_active.sum.pct_of_peak_sustained_elapsed                                                    %                11.60
+  dram__cycles_elapsed.avg                                                                             cycle             41821184
+  dram__cycles_elapsed.avg.per_second                                                                    Ghz                13.79
+  dram__cycles_elapsed.max                                                                             cycle             41821184
+  dram__cycles_elapsed.max.per_second                                                                    Ghz                13.79
+  dram__cycles_elapsed.min                                                                             cycle             41821184
+  dram__cycles_elapsed.min.per_second                                                                    Ghz                13.79
+  dram__cycles_elapsed.sum                                                                             cycle            250927104
+  dram__cycles_elapsed.sum.per_second                                                                    Ghz                82.73
+  fbpa__dram_sectors.avg.pct_of_peak_sustained_elapsed                                                     %                 9.45
+  fbpa__dram_sectors.max.pct_of_peak_sustained_elapsed                                                     %                 9.45
+  fbpa__dram_sectors.min.pct_of_peak_sustained_elapsed                                                     %                 9.45
+  fbpa__dram_sectors.sum.pct_of_peak_sustained_elapsed                                                     %                 9.45
+  gpc__cycles_elapsed.avg                                                                              cycle           7035582.60
+  gpc__cycles_elapsed.avg.per_second                                                                     Ghz                 2.32
+  gpc__cycles_elapsed.max                                                                              cycle              7039729
+  gpc__cycles_elapsed.max.per_second                                                                     Ghz                 2.32
+  gpc__cycles_elapsed.min                                                                              cycle              7030353
+  gpc__cycles_elapsed.min.per_second                                                                     Ghz                 2.32
+  gpc__cycles_elapsed.sum                                                                              cycle             35177913
+  gpc__cycles_elapsed.sum.per_second                                                                     Ghz                11.60
+  gpu__compute_memory_access_throughput_internal_activity.avg.pct_of_peak_sustained_elapsed                %                14.26
+  gpu__compute_memory_access_throughput_internal_activity.max.pct_of_peak_sustained_elapsed                %                14.27
+  gpu__compute_memory_access_throughput_internal_activity.min.pct_of_peak_sustained_elapsed                %                14.25
+  gpu__compute_memory_access_throughput_internal_activity.sum.pct_of_peak_sustained_elapsed                %                14.26
+  gpu__compute_memory_request_throughput_internal_activity.avg.pct_of_peak_sustained_elapsed               %                 0.00
+  gpu__compute_memory_request_throughput_internal_activity.max.pct_of_peak_sustained_elapsed               %                 0.00
+  gpu__compute_memory_request_throughput_internal_activity.min.pct_of_peak_sustained_elapsed               %                 0.00
+  gpu__compute_memory_request_throughput_internal_activity.sum.pct_of_peak_sustained_elapsed               %                 0.00
+  gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed                                         %                61.22
+  gpu__compute_memory_throughput.max.pct_of_peak_sustained_elapsed                                         %                68.90
+  gpu__compute_memory_throughput.min.pct_of_peak_sustained_elapsed                                         %                57.38
+  gpu__compute_memory_throughput.sum.pct_of_peak_sustained_elapsed                                         %                61.22
+  gpu__dram_throughput.avg.pct_of_peak_sustained_elapsed                                                   %                11.60
+  gpu__dram_throughput.max.pct_of_peak_sustained_elapsed                                                   %                11.60
+  gpu__dram_throughput.min.pct_of_peak_sustained_elapsed                                                   %                11.59
+  gpu__dram_throughput.sum.pct_of_peak_sustained_elapsed                                                   %                11.60
+  gpu__time_duration.avg                                                                                  ms                 3.03
+  gpu__time_duration.max                                                                                  ms                 3.03
+  gpu__time_duration.min                                                                                  ms                 3.03
+  gpu__time_duration.sum                                                                                  ms                 3.03
+  gr__workids_granted.avg                                                                                                       0
+  gr__workids_granted.max                                                                                                       0
+  gr__workids_granted.min                                                                                                       0
+  gr__workids_granted.sum                                                                                                       0
+  gr__workids_granted_as_ctas.avg                                                                      block                    0
+  gr__workids_granted_as_ctas.max                                                                      block                    0
+  gr__workids_granted_as_ctas.min                                                                      block                    0
+  gr__workids_granted_as_ctas.sum                                                                      block                    0
+  gr__workids_requested.avg                                                                                                     0
+  gr__workids_requested.max                                                                                                     0
+  gr__workids_requested.min                                                                                                     0
+  gr__workids_requested.sum                                                                                                     0
+  idc__request_cycles_active.avg.pct_of_peak_sustained_elapsed                                             %                 0.01
+  idc__request_cycles_active.max.pct_of_peak_sustained_elapsed                                             %                 0.01
+  idc__request_cycles_active.min.pct_of_peak_sustained_elapsed                                             %                 0.01
+  idc__request_cycles_active.sum.pct_of_peak_sustained_elapsed                                             %                 0.01
+  l1tex__cycles_active.avg                                                                             cycle           6470032.56
+  l1tex__cycles_active.max                                                                             cycle              7050843
+  l1tex__cycles_active.min                                                                             cycle              6170478
+  l1tex__cycles_active.sum                                                                             cycle            310561563
+  l1tex__cycles_elapsed.avg                                                                            cycle              7024586
+  l1tex__cycles_elapsed.max                                                                            cycle              7028830
+  l1tex__cycles_elapsed.min                                                                            cycle              7018435
+  l1tex__cycles_elapsed.sum                                                                            cycle            337180128
+  l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed                                                 %                11.84
+  l1tex__data_bank_reads.max.pct_of_peak_sustained_elapsed                                                 %                13.32
+  l1tex__data_bank_reads.min.pct_of_peak_sustained_elapsed                                                 %                11.10
+  l1tex__data_bank_reads.sum.pct_of_peak_sustained_elapsed                                                 %                11.84
+  l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed                                                %                 2.51
+  l1tex__data_bank_writes.max.pct_of_peak_sustained_elapsed                                                %                 2.82
+  l1tex__data_bank_writes.min.pct_of_peak_sustained_elapsed                                                %                 2.35
+  l1tex__data_bank_writes.sum.pct_of_peak_sustained_elapsed                                                %                 2.51
+  l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed                                        %                61.22
+  l1tex__data_pipe_lsu_wavefronts.max.pct_of_peak_sustained_elapsed                                        %                68.90
+  l1tex__data_pipe_lsu_wavefronts.min.pct_of_peak_sustained_elapsed                                        %                57.38
+  l1tex__data_pipe_lsu_wavefronts.sum.pct_of_peak_sustained_elapsed                                        %                61.22
+  l1tex__data_pipe_tex_wavefronts.avg.pct_of_peak_sustained_elapsed                                        %                    0
+  l1tex__data_pipe_tex_wavefronts.max.pct_of_peak_sustained_elapsed                                        %                    0
+  l1tex__data_pipe_tex_wavefronts.min.pct_of_peak_sustained_elapsed                                        %                    0
+  l1tex__data_pipe_tex_wavefronts.sum.pct_of_peak_sustained_elapsed                                        %                    0
+  l1tex__f_wavefronts.avg.pct_of_peak_sustained_elapsed                                                    %                    0
+  l1tex__f_wavefronts.max.pct_of_peak_sustained_elapsed                                                    %                    0
+  l1tex__f_wavefronts.min.pct_of_peak_sustained_elapsed                                                    %                    0
+  l1tex__f_wavefronts.sum.pct_of_peak_sustained_elapsed                                                    %                    0
+  l1tex__lsu_writeback_active.avg.pct_of_peak_sustained_elapsed                                            %                32.65
+  l1tex__lsu_writeback_active.max.pct_of_peak_sustained_elapsed                                            %                36.74
+  l1tex__lsu_writeback_active.min.pct_of_peak_sustained_elapsed                                            %                30.61
+  l1tex__lsu_writeback_active.sum.pct_of_peak_sustained_elapsed                                            %                32.65
+  l1tex__lsuin_requests.avg.pct_of_peak_sustained_elapsed                                                  %                34.29
+  l1tex__lsuin_requests.max.pct_of_peak_sustained_elapsed                                                  %                38.57
+  l1tex__lsuin_requests.min.pct_of_peak_sustained_elapsed                                                  %                32.15
+  l1tex__lsuin_requests.sum.pct_of_peak_sustained_elapsed                                                  %                34.29
+  l1tex__m_l1tex2xbar_req_cycles_active.avg.pct_of_peak_sustained_elapsed                                  %                 7.28
+  l1tex__m_l1tex2xbar_req_cycles_active.max.pct_of_peak_sustained_elapsed                                  %                 8.22
+  l1tex__m_l1tex2xbar_req_cycles_active.min.pct_of_peak_sustained_elapsed                                  %                 6.76
+  l1tex__m_l1tex2xbar_req_cycles_active.sum.pct_of_peak_sustained_elapsed                                  %                 7.28
+  l1tex__m_xbar2l1tex_read_sectors.avg.pct_of_peak_sustained_elapsed                                       %                 9.95
+  l1tex__m_xbar2l1tex_read_sectors.max.pct_of_peak_sustained_elapsed                                       %                11.20
+  l1tex__m_xbar2l1tex_read_sectors.min.pct_of_peak_sustained_elapsed                                       %                 9.33
+  l1tex__m_xbar2l1tex_read_sectors.sum.pct_of_peak_sustained_elapsed                                       %                 9.95
+  l1tex__m_xbar2l1tex_read_sectors_mem_dshared.avg.pct_of_peak_sustained_elapsed                           %                    0
+  l1tex__m_xbar2l1tex_read_sectors_mem_dshared.max.pct_of_peak_sustained_elapsed                           %                    0
+  l1tex__m_xbar2l1tex_read_sectors_mem_dshared.min.pct_of_peak_sustained_elapsed                           %                    0
+  l1tex__m_xbar2l1tex_read_sectors_mem_dshared.sum.pct_of_peak_sustained_elapsed                           %                    0
+  l1tex__tex_writeback_active.avg.pct_of_peak_sustained_elapsed                                            %                    0
+  l1tex__tex_writeback_active.max.pct_of_peak_sustained_elapsed                                            %                    0
+  l1tex__tex_writeback_active.min.pct_of_peak_sustained_elapsed                                            %                    0
+  l1tex__tex_writeback_active.sum.pct_of_peak_sustained_elapsed                                            %                    0
+  l1tex__texin_sm2tex_req_cycles_active.avg.pct_of_peak_sustained_elapsed                                  %                 0.00
+  l1tex__texin_sm2tex_req_cycles_active.max.pct_of_peak_sustained_elapsed                                  %                 0.00
+  l1tex__texin_sm2tex_req_cycles_active.min.pct_of_peak_sustained_elapsed                                  %                 0.00
+  l1tex__texin_sm2tex_req_cycles_active.sum.pct_of_peak_sustained_elapsed                                  %                 0.00
+  l1tex__throughput.avg.pct_of_peak_sustained_active                                                       %                66.46
+  l1tex__throughput.max.pct_of_peak_sustained_active                                                       %                74.80
+  l1tex__throughput.min.pct_of_peak_sustained_active                                                       %                62.30
+  l1tex__throughput.sum.pct_of_peak_sustained_active                                                       %                66.46
+  l1tex__tmain_requests.avg.pct_of_peak_sustained_elapsed                                                  %                    0
+  l1tex__tmain_requests.max.pct_of_peak_sustained_elapsed                                                  %                    0
+  l1tex__tmain_requests.min.pct_of_peak_sustained_elapsed                                                  %                    0
+  l1tex__tmain_requests.sum.pct_of_peak_sustained_elapsed                                                  %                    0
+  launch__barrier_count                                                                                                         1
+  launch__block_dim_x                                                                                  block                  256
+  launch__block_dim_y                                                                                  block                    1
+  launch__block_dim_z                                                                                  block                    1
+  launch__block_size                                                                                                          256
+  launch__cluster_dim_x                                                                                                         0
+  launch__cluster_dim_y                                                                                                         0
+  launch__cluster_dim_z                                                                                                         0
+  launch__cluster_max_active                                                                         cluster                    0
+  launch__cluster_max_potential_size                                                                   block                    8
+  launch__cluster_scheduling_policy                                                                                  PolicySpread
+  launch__cluster_size                                                                                                          0
+  launch__context_id                                                                                                            1
+  launch__device_id                                                                                                             0
+  launch__func_cache_config                                                                                       CachePreferNone
+  launch__function_pcs                                                                                                          1
+  launch__grid_dim_x                                                                                                           32
+  launch__grid_dim_y                                                                                                            8
+  launch__grid_dim_z                                                                                                            1
+  launch__grid_size                                                                                                           256
+  launch__kernel_name                                                                                                            
+  launch__occupancy_cluster_gpu_pct                                                                        %                    0
+  launch__occupancy_cluster_pct                                                                            %                    0
+  launch__occupancy_limit_barriers                                                                     block                   24
+  launch__occupancy_limit_blocks                                                                       block                   24
+  launch__occupancy_limit_registers                                                                    block                    2
+  launch__occupancy_limit_shared_mem                                                                   block                    7
+  launch__occupancy_limit_warps                                                                        block                    6
+  launch__occupancy_per_barrier_count                                                                                         304
+  launch__occupancy_per_block_size                                                                                            425
+  launch__occupancy_per_cluster_size                                                                                            0
+  launch__occupancy_per_register_count                                                                                       4976
+  launch__occupancy_per_shared_mem_size                                                                                      2112
+  launch__registers_per_thread                                                               register/thread                  128
+  launch__registers_per_thread_allocated                                                     register/thread                  128
+  launch__shared_mem_config_size                                                                       Kbyte                65.54
+  launch__shared_mem_per_block                                                                   Kbyte/block                 9.22
+  launch__shared_mem_per_block_allocated                                                         Kbyte/block                 9.22
+  launch__shared_mem_per_block_driver                                                            Kbyte/block                 1.02
+  launch__shared_mem_per_block_dynamic                                                            byte/block                    0
+  launch__shared_mem_per_block_static                                                            Kbyte/block                 8.19
+  launch__sm_count                                                                                        SM                   48
+  launch__stack_size                                                                                                         1024
+  launch__stream_id                                                                                                            16
+  launch__thread_count                                                                                thread                65536
+  launch__tpc_count                                                                                                            24
+  launch__tpc_enabled                                                                                                         all
+  launch__uses_cdp                                                                                                              0
+  launch__uses_green_context                                                                                                    0
+  launch__uses_vgpu                                                                                                             0
+  launch__waves_per_multiprocessor                                                                                           2.67
+  lts__cycles_active.avg                                                                               cycle           6096018.17
+  lts__cycles_active.max                                                                               cycle              6126456
+  lts__cycles_active.min                                                                               cycle              6065789
+  lts__cycles_active.sum                                                                               cycle            146304436
+  lts__cycles_elapsed.avg                                                                              cycle              6414395
+  lts__cycles_elapsed.max                                                                              cycle              6414395
+  lts__cycles_elapsed.min                                                                              cycle              6414395
+  lts__cycles_elapsed.sum                                                                              cycle            153945480
+  lts__d_atomic_input_cycles_active.avg.pct_of_peak_sustained_elapsed                                      %                    0
+  lts__d_atomic_input_cycles_active.max.pct_of_peak_sustained_elapsed                                      %                    0
+  lts__d_atomic_input_cycles_active.min.pct_of_peak_sustained_elapsed                                      %                    0
+  lts__d_atomic_input_cycles_active.sum.pct_of_peak_sustained_elapsed                                      %                    0
+  lts__d_sectors.avg.pct_of_peak_sustained_elapsed                                                         %                 7.26
+  lts__d_sectors.max.pct_of_peak_sustained_elapsed                                                         %                 7.26
+  lts__d_sectors.min.pct_of_peak_sustained_elapsed                                                         %                 7.25
+  lts__d_sectors.sum.pct_of_peak_sustained_elapsed                                                         %                 7.26
+  lts__d_sectors_fill_device.avg.pct_of_peak_sustained_elapsed                                             %                 4.44
+  lts__d_sectors_fill_device.max.pct_of_peak_sustained_elapsed                                             %                 4.44
+  lts__d_sectors_fill_device.min.pct_of_peak_sustained_elapsed                                             %                 4.44
+  lts__d_sectors_fill_device.sum.pct_of_peak_sustained_elapsed                                             %                 4.44
+  lts__lts2xbar_cycles_active.avg.pct_of_peak_sustained_elapsed                                            %                11.05
+  lts__lts2xbar_cycles_active.max.pct_of_peak_sustained_elapsed                                            %                11.07
+  lts__lts2xbar_cycles_active.min.pct_of_peak_sustained_elapsed                                            %                11.04
+  lts__lts2xbar_cycles_active.sum.pct_of_peak_sustained_elapsed                                            %                11.05
+  lts__t_sectors.avg.pct_of_peak_sustained_elapsed                                                         %                12.18
+  lts__t_sectors.max.pct_of_peak_sustained_elapsed                                                         %                12.18
+  lts__t_sectors.min.pct_of_peak_sustained_elapsed                                                         %                12.17
+  lts__t_sectors.sum.pct_of_peak_sustained_elapsed                                                         %                12.18
+  lts__t_tag_requests.avg.pct_of_peak_sustained_elapsed                                                    %                14.33
+  lts__t_tag_requests.max.pct_of_peak_sustained_elapsed                                                    %                14.34
+  lts__t_tag_requests.min.pct_of_peak_sustained_elapsed                                                    %                14.32
+  lts__t_tag_requests.sum.pct_of_peak_sustained_elapsed                                                    %                14.33
+  lts__throughput.avg.pct_of_peak_sustained_elapsed                                                        %                15.95
+  lts__throughput.max.pct_of_peak_sustained_elapsed                                                        %                15.97
+  lts__throughput.min.pct_of_peak_sustained_elapsed                                                        %                15.93
+  lts__throughput.sum.pct_of_peak_sustained_elapsed                                                        %                15.95
+  lts__xbar2lts_cycles_active.avg.pct_of_peak_sustained_elapsed                                            %                15.95
+  lts__xbar2lts_cycles_active.max.pct_of_peak_sustained_elapsed                                            %                15.97
+  lts__xbar2lts_cycles_active.min.pct_of_peak_sustained_elapsed                                            %                15.93
+  lts__xbar2lts_cycles_active.sum.pct_of_peak_sustained_elapsed                                            %                15.95
+  numa__cpu_affinity                                                                                                            1
+  numa__dev_display_name_all                                                                                                    1
+  numa__id_cpu                                                                                                                  1
+  numa__id_memory                                                                                                               1
+  nvlink__bandwidth                                                                                                             0
+  nvlink__count_logical                                                                                                         0
+  nvlink__count_physical                                                                                                        0
+  nvlink__destination_ports                                                                                                     0
+  nvlink__dev0Id                                                                                                                0
+  nvlink__dev0type                                                                                                              0
+  nvlink__dev1Id                                                                                                                0
+  nvlink__dev1type                                                                                                              0
+  nvlink__dev_display_name_all                                                                                                  1
+  nvlink__enabled_mask                                                                                                          0
+  nvlink__is_direct_link                                                                                                        0
+  nvlink__is_nvswitch_connected                                                                                                 0
+  nvlink__max_count                                                                                                             0
+  nvlink__peer_access                                                                                                           0
+  nvlink__peer_atomic                                                                                                           0
+  nvlink__source_ports                                                                                                          0
+  nvlink__system_access                                                                                                         0
+  nvlink__system_atomic                                                                                                         0
+  profiler__perfworks_session_reuse                                                                                             0
+  profiler__replayer_bytes_mem_accessible.avg                                                          Gbyte                 1.15
+  profiler__replayer_bytes_mem_accessible.max                                                          Gbyte                 1.15
+  profiler__replayer_bytes_mem_accessible.min                                                          Gbyte                 1.15
+  profiler__replayer_bytes_mem_accessible.sum                                                          Gbyte                10.34
+  profiler__replayer_bytes_mem_backed_up.avg                                                           Gbyte                 1.15
+  profiler__replayer_bytes_mem_backed_up.max                                                           Gbyte                 1.15
+  profiler__replayer_bytes_mem_backed_up.min                                                           Gbyte                 1.15
+  profiler__replayer_bytes_mem_backed_up.sum                                                           Gbyte                10.34
+  profiler__replayer_passes                                                                             pass                    9
+  profiler__replayer_passes_type_warmup                                                                 pass                    0
+  sm__cycles_active.avg                                                                                cycle           6470032.56
+  sm__cycles_active.max                                                                                cycle              7050843
+  sm__cycles_active.min                                                                                cycle              6170478
+  sm__cycles_active.sum                                                                                cycle            310561563
+  sm__cycles_elapsed.avg                                                                               cycle              7024586
+  sm__cycles_elapsed.max                                                                               cycle              7028830
+  sm__cycles_elapsed.min                                                                               cycle              7018435
+  sm__cycles_elapsed.sum                                                                               cycle            337180128
+  sm__inst_executed.avg.pct_of_peak_sustained_elapsed                                                      %                52.68
+  sm__inst_executed.max.pct_of_peak_sustained_elapsed                                                      %                59.27
+  sm__inst_executed.min.pct_of_peak_sustained_elapsed                                                      %                49.39
+  sm__inst_executed.sum.pct_of_peak_sustained_elapsed                                                      %                52.68
+  sm__inst_executed_pipe_adu.avg.pct_of_peak_sustained_elapsed                                             %                 3.75
+  sm__inst_executed_pipe_adu.max.pct_of_peak_sustained_elapsed                                             %                 4.22
+  sm__inst_executed_pipe_adu.min.pct_of_peak_sustained_elapsed                                             %                 3.51
+  sm__inst_executed_pipe_adu.sum.pct_of_peak_sustained_elapsed                                             %                 3.75
+  sm__inst_executed_pipe_cbu_pred_on_any.avg.pct_of_peak_sustained_elapsed                                 %                 0.00
+  sm__inst_executed_pipe_cbu_pred_on_any.max.pct_of_peak_sustained_elapsed                                 %                 0.00
+  sm__inst_executed_pipe_cbu_pred_on_any.min.pct_of_peak_sustained_elapsed                                 %                 0.00
+  sm__inst_executed_pipe_cbu_pred_on_any.sum.pct_of_peak_sustained_elapsed                                 %                 0.00
+  sm__inst_executed_pipe_ipa.avg.pct_of_peak_sustained_elapsed                                             %                    0
+  sm__inst_executed_pipe_ipa.max.pct_of_peak_sustained_elapsed                                             %                    0
+  sm__inst_executed_pipe_ipa.min.pct_of_peak_sustained_elapsed                                             %                    0
+  sm__inst_executed_pipe_ipa.sum.pct_of_peak_sustained_elapsed                                             %                    0
+  sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_elapsed                                             %                34.29
+  sm__inst_executed_pipe_lsu.max.pct_of_peak_sustained_elapsed                                             %                38.57
+  sm__inst_executed_pipe_lsu.min.pct_of_peak_sustained_elapsed                                             %                32.15
+  sm__inst_executed_pipe_lsu.sum.pct_of_peak_sustained_elapsed                                             %                34.29
+  sm__inst_executed_pipe_tex.avg.pct_of_peak_sustained_elapsed                                             %                    0
+  sm__inst_executed_pipe_tex.max.pct_of_peak_sustained_elapsed                                             %                    0
+  sm__inst_executed_pipe_tex.min.pct_of_peak_sustained_elapsed                                             %                    0
+  sm__inst_executed_pipe_tex.sum.pct_of_peak_sustained_elapsed                                             %                    0
+  sm__inst_executed_pipe_uniform.avg.pct_of_peak_sustained_elapsed                                         %                 0.39
+  sm__inst_executed_pipe_uniform.max.pct_of_peak_sustained_elapsed                                         %                 0.44
+  sm__inst_executed_pipe_uniform.min.pct_of_peak_sustained_elapsed                                         %                 0.37
+  sm__inst_executed_pipe_uniform.sum.pct_of_peak_sustained_elapsed                                         %                 0.39
+  sm__inst_executed_pipe_xu.avg.pct_of_peak_sustained_elapsed                                              %                    0
+  sm__inst_executed_pipe_xu.max.pct_of_peak_sustained_elapsed                                              %                    0
+  sm__inst_executed_pipe_xu.min.pct_of_peak_sustained_elapsed                                              %                    0
+  sm__inst_executed_pipe_xu.sum.pct_of_peak_sustained_elapsed                                              %                    0
+  sm__instruction_throughput_internal_activity.avg.pct_of_peak_sustained_elapsed                           %                    0
+  sm__instruction_throughput_internal_activity.max.pct_of_peak_sustained_elapsed                           %                    0
+  sm__instruction_throughput_internal_activity.min.pct_of_peak_sustained_elapsed                           %                    0
+  sm__instruction_throughput_internal_activity.sum.pct_of_peak_sustained_elapsed                           %                    0
+  sm__issue_active.avg.pct_of_peak_sustained_elapsed                                                       %                52.68
+  sm__issue_active.max.pct_of_peak_sustained_elapsed                                                       %                59.27
+  sm__issue_active.min.pct_of_peak_sustained_elapsed                                                       %                49.39
+  sm__issue_active.sum.pct_of_peak_sustained_elapsed                                                       %                52.68
+  sm__maximum_warps_avg_per_active_cycle                                                                warp                   16
+  sm__maximum_warps_per_active_cycle_pct                                                                   %                33.33
+  sm__memory_throughput_internal_activity.avg.pct_of_peak_sustained_elapsed                                %                 0.01
+  sm__memory_throughput_internal_activity.max.pct_of_peak_sustained_elapsed                                %                 0.01
+  sm__memory_throughput_internal_activity.min.pct_of_peak_sustained_elapsed                                %                 0.01
+  sm__memory_throughput_internal_activity.sum.pct_of_peak_sustained_elapsed                                %                 0.01
+  sm__mio2rf_writeback_active.avg.pct_of_peak_sustained_elapsed                                            %                 8.24
+  sm__mio2rf_writeback_active.max.pct_of_peak_sustained_elapsed                                            %                 9.27
+  sm__mio2rf_writeback_active.min.pct_of_peak_sustained_elapsed                                            %                 7.73
+  sm__mio2rf_writeback_active.sum.pct_of_peak_sustained_elapsed                                            %                 8.24
+  sm__mio_inst_issued.avg.pct_of_peak_sustained_elapsed                                                    %                12.68
+  sm__mio_inst_issued.max.pct_of_peak_sustained_elapsed                                                    %                14.26
+  sm__mio_inst_issued.min.pct_of_peak_sustained_elapsed                                                    %                11.89
+  sm__mio_inst_issued.sum.pct_of_peak_sustained_elapsed                                                    %                12.68
+  sm__mio_pq_read_cycles_active.avg.pct_of_peak_sustained_elapsed                                          %                 2.56
+  sm__mio_pq_read_cycles_active.max.pct_of_peak_sustained_elapsed                                          %                 2.88
+  sm__mio_pq_read_cycles_active.min.pct_of_peak_sustained_elapsed                                          %                 2.40
+  sm__mio_pq_read_cycles_active.sum.pct_of_peak_sustained_elapsed                                          %                 2.56
+  sm__mio_pq_write_cycles_active.avg.pct_of_peak_sustained_elapsed                                         %                 2.53
+  sm__mio_pq_write_cycles_active.max.pct_of_peak_sustained_elapsed                                         %                 2.84
+  sm__mio_pq_write_cycles_active.min.pct_of_peak_sustained_elapsed                                         %                 2.37
+  sm__mio_pq_write_cycles_active.sum.pct_of_peak_sustained_elapsed                                         %                 2.53
+  sm__pipe_aluheavy_cycles_active.avg.pct_of_peak_sustained_elapsed                                        %                 9.96
+  sm__pipe_aluheavy_cycles_active.max.pct_of_peak_sustained_elapsed                                        %                11.22
+  sm__pipe_aluheavy_cycles_active.min.pct_of_peak_sustained_elapsed                                        %                 9.34
+  sm__pipe_aluheavy_cycles_active.sum.pct_of_peak_sustained_elapsed                                        %                 9.96
+  sm__pipe_fma_cycles_active.avg.pct_of_peak_sustained_elapsed                                             %                42.45
+  sm__pipe_fma_cycles_active.max.pct_of_peak_sustained_elapsed                                             %                47.76
+  sm__pipe_fma_cycles_active.min.pct_of_peak_sustained_elapsed                                             %                39.80
+  sm__pipe_fma_cycles_active.sum.pct_of_peak_sustained_elapsed                                             %                42.45
+  sm__pipe_fmaheavy_cycles_active.avg.pct_of_peak_sustained_elapsed                                        %                45.09
+  sm__pipe_fmaheavy_cycles_active.max.pct_of_peak_sustained_elapsed                                        %                50.73
+  sm__pipe_fmaheavy_cycles_active.min.pct_of_peak_sustained_elapsed                                        %                42.27
+  sm__pipe_fmaheavy_cycles_active.sum.pct_of_peak_sustained_elapsed                                        %                45.09
+  sm__pipe_fp64_cycles_active.avg.pct_of_peak_sustained_elapsed                                            %                    0
+  sm__pipe_fp64_cycles_active.max.pct_of_peak_sustained_elapsed                                            %                    0
+  sm__pipe_fp64_cycles_active.min.pct_of_peak_sustained_elapsed                                            %                    0
+  sm__pipe_fp64_cycles_active.sum.pct_of_peak_sustained_elapsed                                            %                    0
+  sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed                                          %                    0
+  sm__pipe_tensor_cycles_active.max.pct_of_peak_sustained_elapsed                                          %                    0
+  sm__pipe_tensor_cycles_active.min.pct_of_peak_sustained_elapsed                                          %                    0
+  sm__pipe_tensor_cycles_active.sum.pct_of_peak_sustained_elapsed                                          %                    0
+  sm__pipe_tma_cycles_active.avg.pct_of_peak_sustained_elapsed                                             %                    0
+  sm__pipe_tma_cycles_active.max.pct_of_peak_sustained_elapsed                                             %                    0
+  sm__pipe_tma_cycles_active.min.pct_of_peak_sustained_elapsed                                             %                    0
+  sm__pipe_tma_cycles_active.sum.pct_of_peak_sustained_elapsed                                             %                    0
+  sm__throughput.avg.pct_of_peak_sustained_elapsed                                                         %                52.68
+  sm__throughput.max.pct_of_peak_sustained_elapsed                                                         %                59.27
+  sm__throughput.min.pct_of_peak_sustained_elapsed                                                         %                49.39
+  sm__throughput.sum.pct_of_peak_sustained_elapsed                                                         %                52.68
+  sm__warps_active.avg.pct_of_peak_sustained_active                                                        %                30.55
+  sm__warps_active.avg.per_cycle_active                                                                 warp                14.66
+  sm__warps_active.max.pct_of_peak_sustained_active                                                        %                35.76
+  sm__warps_active.max.per_cycle_active                                                                 warp                17.17
+  sm__warps_active.min.pct_of_peak_sustained_active                                                        %                28.17
+  sm__warps_active.min.per_cycle_active                                                                 warp                13.52
+  sm__warps_active.sum.pct_of_peak_sustained_active                                                        %                30.55
+  sm__warps_active.sum.per_cycle_active                                                                 warp               703.90
+  smsp__cycles_active.avg                                                                              cycle           6468708.44
+  smsp__cycles_active.max                                                                              cycle              7040265
+  smsp__cycles_active.min                                                                              cycle              6174407
+  smsp__cycles_active.sum                                                                              cycle           1241992020
+  smsp__cycles_elapsed.avg                                                                             cycle              7024586
+  smsp__cycles_elapsed.max                                                                             cycle              7028830
+  smsp__cycles_elapsed.min                                                                             cycle              7018435
+  smsp__cycles_elapsed.sum                                                                             cycle           1348720512
+  smsp__maximum_warps_avg_per_active_cycle                                                              warp                    4
+  smsp__warps_active.avg.peak_sustained                                                                 warp                   12
+  smsp__warps_active.max.peak_sustained                                                                 warp                   12
+  smsp__warps_active.min.peak_sustained                                                                 warp                   12
+  smsp__warps_active.sum.peak_sustained                                                                 warp                 2304
+  syslts__d_atomic_input_cycles_active.avg.pct_of_peak_sustained_elapsed                                   %                    0
+  syslts__d_atomic_input_cycles_active.max.pct_of_peak_sustained_elapsed                                   %                    0
+  syslts__d_atomic_input_cycles_active.min.pct_of_peak_sustained_elapsed                                   %                    0
+  syslts__d_atomic_input_cycles_active.sum.pct_of_peak_sustained_elapsed                                   %                    0
+  syslts__d_sectors.avg.pct_of_peak_sustained_elapsed                                                      %                 0.00
+  syslts__d_sectors.max.pct_of_peak_sustained_elapsed                                                      %                 0.01
+  syslts__d_sectors.min.pct_of_peak_sustained_elapsed                                                      %                 0.00
+  syslts__d_sectors.sum.pct_of_peak_sustained_elapsed                                                      %                 0.00
+  syslts__d_sectors_fill_sysmem.avg.pct_of_peak_sustained_elapsed                                          %                    0
+  syslts__d_sectors_fill_sysmem.max.pct_of_peak_sustained_elapsed                                          %                    0
+  syslts__d_sectors_fill_sysmem.min.pct_of_peak_sustained_elapsed                                          %                    0
+  syslts__d_sectors_fill_sysmem.sum.pct_of_peak_sustained_elapsed                                          %                    0
+  syslts__syslts2xbar_cycles_active.avg.pct_of_peak_sustained_elapsed                                      %                 0.01
+  syslts__syslts2xbar_cycles_active.max.pct_of_peak_sustained_elapsed                                      %                 0.02
+  syslts__syslts2xbar_cycles_active.min.pct_of_peak_sustained_elapsed                                      %                 0.00
+  syslts__syslts2xbar_cycles_active.sum.pct_of_peak_sustained_elapsed                                      %                 0.01
+  syslts__t_sectors.avg.pct_of_peak_sustained_elapsed                                                      %                 0.01
+  syslts__t_sectors.max.pct_of_peak_sustained_elapsed                                                      %                 0.03
+  syslts__t_sectors.min.pct_of_peak_sustained_elapsed                                                      %                 0.00
+  syslts__t_sectors.sum.pct_of_peak_sustained_elapsed                                                      %                 0.01
+  syslts__t_tag_requests.avg.pct_of_peak_sustained_elapsed                                                 %                 0.01
+  syslts__t_tag_requests.max.pct_of_peak_sustained_elapsed                                                 %                 0.02
+  syslts__t_tag_requests.min.pct_of_peak_sustained_elapsed                                                 %                 0.00
+  syslts__t_tag_requests.sum.pct_of_peak_sustained_elapsed                                                 %                 0.01
+  syslts__xbar2syslts_cycles_active.avg.pct_of_peak_sustained_elapsed                                      %                 0.01
+  syslts__xbar2syslts_cycles_active.max.pct_of_peak_sustained_elapsed                                      %                 0.03
+  syslts__xbar2syslts_cycles_active.min.pct_of_peak_sustained_elapsed                                      %                 0.00
+  syslts__xbar2syslts_cycles_active.sum.pct_of_peak_sustained_elapsed                                      %                 0.01
+

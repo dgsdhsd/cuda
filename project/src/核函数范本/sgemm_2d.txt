@@ -1,0 +1,234 @@
+#include <cuda_runtime.h>
+
+// -----------------------------------------------------------------------------
+// cp.async 16 字节异步拷贝内联汇编 (支持 Ampere 及以上架构)
+// -----------------------------------------------------------------------------
+__device__ __forceinline__ void cp_async_cg(void* smem_ptr, const void* gmem_ptr) {
+    unsigned int smem_addr = static_cast<unsigned int>(__cvta_generic_to_shared(smem_ptr));
+    asm volatile(
+        "cp.async.cg.shared.global [%0], [%1], 16;\n"
+        :
+        : "r"(smem_addr), "l"(gmem_ptr)
+    );
+}
+
+// -----------------------------------------------------------------------------
+// 高性能 2D Register Block SGEMM Kernel
+// -----------------------------------------------------------------------------
+__global__ void __launch_bounds__(256, 1) sgemm_2d_Register_bank_improve(
+    int M, int N, int K,
+    const float* __restrict__ A,
+    const float* __restrict__ B,
+    float* __restrict__ C) 
+{
+    // -------------------------------------------------------------------------
+    // 1. 基础分块参数与共享内存定义
+    // -------------------------------------------------------------------------
+    constexpr int BM = 128;
+    constexpr int BN = 128;
+    constexpr int BK = 32; // 调整为 32，适配流水线与矢量化加载
+    constexpr int TM = 8;
+    constexpr int TN = 8;
+
+    union SharedStorage {
+        struct {
+            // s_a: [2][32][128], k 为行, m 为列, m 维度 128 float 连续
+            float s_a[2][BK][BM];
+            // s_b: [2][32][128], k 为行, n 为列, n 维度 128 float 连续
+            float s_b[2][BK][BN];
+        } compute;
+    };
+
+    __shared__ SharedStorage smem;
+
+    const int tid = threadIdx.x; // 0 ~ 255
+
+    // 预先计算好的线程解耦常数
+    const int lane_16 = tid % 16;         // 0 ~ 15，控制 B/C 矩阵列解耦组
+    const int thread_m = (tid / 16) * 8;   // 0, 8, 16 ... 120，控制 A/C 矩阵行起始
+
+    const int block_row = blockIdx.y * BM;
+    const int block_col = blockIdx.x * BN;
+
+    // 调整全局基指针到当前 Block 起始位置
+    A += block_row * K;
+    B += block_col;
+
+    // 线程私有 MMA 累加寄存器 (8x8)
+    float accum[TM][TN] = {0.0f};
+
+    // -------------------------------------------------------------------------
+    // 2. 流水线预热 (Prologue): 异步加载第 0 块数据到 Buffer 0
+    // -------------------------------------------------------------------------
+    int write_stage = 0;
+
+    // 加载 A 矩阵到 s_a (转置存入 SMEM: s_a[write_stage][k][m])
+    #pragma unroll
+    for (int i = 0; i < 4; ++i) {
+        int load_idx = tid + i * 256; // 0 ~ 1023  -----------------------这有什么意义？
+        int r = load_idx / 8;        // A 矩阵全局行 (0 ~ 127)
+        int c_f4 = load_idx % 8;     // A 矩阵全局列 float4 索引 (0 ~ 7)
+
+        float4 val = *reinterpret_cast<const float4*>(A + r * K + c_f4 * 4);
+        smem.compute.s_a[write_stage][c_f4 * 4 + 0][r] = val.x;
+        smem.compute.s_a[write_stage][c_f4 * 4 + 1][r] = val.y;
+        smem.compute.s_a[write_stage][c_f4 * 4 + 2][r] = val.z;
+        smem.compute.s_a[write_stage][c_f4 * 4 + 3][r] = val.w;
+    }
+
+    // 异步加载 B 矩阵到 s_b (直接存入 SMEM: s_b[write_stage][k][n])
+    #pragma unroll
+    for (int i = 0; i < 4; ++i) {
+        int load_idx = tid + i * 256; // 0 ~ 1023
+        int r = load_idx / 32;       // B 矩阵全局行 (0 ~ 31)
+        int c_f4 = load_idx % 32;    // B 矩阵全局列 float4 索引 (0 ~ 31)
+
+        cp_async_cg(&smem.compute.s_b[write_stage][r][c_f4 * 4], B + r * N + c_f4 * 4);
+    }
+
+    // 提交异步加载组并等待完成
+    asm volatile("cp.async.commit_group;\n");
+    asm volatile("cp.async.wait_group 0;\n");
+    __syncthreads();
+
+    // -------------------------------------------------------------------------
+    // 3. Main Loop: 双缓冲计算与搬运重叠
+    // -------------------------------------------------------------------------
+    for (int k_step = BK; k_step < K; k_step += BK) {
+        // 推进全局指针
+        A += BK;
+        B += BK * N;
+
+        // 切换写入缓冲区索引 (0 -> 1, 1 -> 0)
+        write_stage ^= 1;
+
+        // --- Step 3A: 异步发射下一轮 (k_step) 数据到 write_stage ---
+        #pragma unroll
+        for (int i = 0; i < 4; ++i) {
+            int load_idx = tid + i * 256;
+            int r = load_idx / 8;
+            int c_f4 = load_idx % 8;
+
+            float4 val = *reinterpret_cast<const float4*>(A + r * K + c_f4 * 4);
+            smem.compute.s_a[write_stage][c_f4 * 4 + 0][r] = val.x;
+            smem.compute.s_a[write_stage][c_f4 * 4 + 1][r] = val.y;
+            smem.compute.s_a[write_stage][c_f4 * 4 + 2][r] = val.z;
+            smem.compute.s_a[write_stage][c_f4 * 4 + 3][r] = val.w;
+        }
+
+        #pragma unroll
+        for (int i = 0; i < 4; ++i) {
+            int load_idx = tid + i * 256;
+            int r = load_idx / 32;
+            int c_f4 = load_idx % 32;
+
+            cp_async_cg(&smem.compute.s_b[write_stage][r][c_f4 * 4], B + r * N + c_f4 * 4);
+        }
+
+        asm volatile("cp.async.commit_group;\n");
+
+        // --- Step 3B: 计算当前 read_stage 缓冲区的数据 ---
+        int read_stage = write_stage ^ 1;
+
+        #pragma unroll
+        for (int k = 0; k < BK; ++k) {
+            // 1. 读取 A 矩阵数据 (2 条 LDS.128 指令，100% Broadcast，0 Bank 冲突)
+            const float4* sa_ptr = reinterpret_cast<const float4*>(
+                &smem.compute.s_a[read_stage][k][thread_m]
+            );
+            float4 reg_a0 = sa_ptr[0];
+            float4 reg_a1 = sa_ptr[1];
+
+            float a_val[8] = {
+                reg_a0.x, reg_a0.y, reg_a0.z, reg_a0.w,
+                reg_a1.x, reg_a1.y, reg_a1.z, reg_a1.w
+            };
+
+            // 2. 读取 B 矩阵数据 (2 条 LDS.128 指令，解耦跨列读取，0 Bank 冲突)
+            const float4* sb_ptr = reinterpret_cast<const float4*>(
+                &smem.compute.s_b[read_stage][k][0]
+            );
+            float4 reg_b0 = sb_ptr[lane_16];      // 取列 0~3 对应 float4
+            float4 reg_b1 = sb_ptr[lane_16 + 16]; // 取列 64~67 对应 float4
+
+            float b_val[8] = {
+                reg_b0.x, reg_b0.y, reg_b0.z, reg_b0.w,
+                reg_b1.x, reg_b1.y, reg_b1.z, reg_b1.w
+            };
+
+            // 3. 外积 MMA 计算 (纯寄存器 FMA 操作)
+            #pragma unroll
+            for (int m = 0; m < 8; ++m) {
+                #pragma unroll
+                for (int n = 0; n < 8; ++n) {
+                    accum[m][n] += a_val[m] * b_val[n];
+                }
+            }
+        }
+
+        // --- Step 3C: 等待下一轮传输完成 ---
+        asm volatile("cp.async.wait_group 0;\n");
+        __syncthreads();
+    }
+
+    // -------------------------------------------------------------------------
+    // 4. Epilogue Loop: 处理最后一轮留在 Buffer 里的数据
+    // -------------------------------------------------------------------------
+    int read_stage = write_stage;
+
+    #pragma unroll
+    for (int k = 0; k < BK; ++k) {
+        const float4* sa_ptr = reinterpret_cast<const float4*>(
+            &smem.compute.s_a[read_stage][k][thread_m]
+        );
+        float4 reg_a0 = sa_ptr[0];
+        float4 reg_a1 = sa_ptr[1];
+
+        float a_val[8] = {
+            reg_a0.x, reg_a0.y, reg_a0.z, reg_a0.w,
+            reg_a1.x, reg_a1.y, reg_a1.z, reg_a1.w
+        };
+
+        const float4* sb_ptr = reinterpret_cast<const float4*>(
+            &smem.compute.s_b[read_stage][k][0]
+        );
+        float4 reg_b0 = sb_ptr[lane_16];
+        float4 reg_b1 = sb_ptr[lane_16 + 16];
+
+        float b_val[8] = {
+            reg_b0.x, reg_b0.y, reg_b0.z, reg_b0.w,
+            reg_b1.x, reg_b1.y, reg_b1.z, reg_b1.w
+        };
+
+        #pragma unroll
+        for (int m = 0; m < 8; ++m) {
+            #pragma unroll
+            for (int n = 0; n < 8; ++n) {
+                accum[m][n] += a_val[m] * b_val[n];
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // 5. 写回全局内存 C (STG.128 矢量化合并写回)
+    // -------------------------------------------------------------------------
+    const int g_col_group0_f4 = (block_col / 4) + lane_16;      // 前 4 列对应的 float4 列索引
+    const int g_col_group1_f4 = (block_col / 4) + lane_16 + 16; // 后 4 列对应的 float4 列索引
+
+    #pragma unroll
+    for (int m = 0; m < 8; ++m) {
+        int g_row = block_row + thread_m + m; // 当前元素的 Global C 行坐标
+
+        // 1. 写回前 4 列 (accum[m][0..3])
+        float4 c_val0 = make_float4(
+            accum[m][0], accum[m][1], accum[m][2], accum[m][3]
+        );
+        float4* c_ptr0 = reinterpret_cast<float4*>(&C[g_row * N + (g_col_group0_f4 * 4)]);
+        *c_ptr0 = c_val0; // STG.128 指令
+
+        // 2. 写回后 4 列 (accum[m][4..7])
+        float4 c_val1 = make_float4(accum[m][4], accum[m][5], accum[m][6], accum[m][7]);
+        float4* c_ptr1 = reinterpret_cast<float4*>(&C[g_row * N + (g_col_group1_f4 * 4)]);
+        *c_ptr1 = c_val1; // STG.128 指令
+    }
+}

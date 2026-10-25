@@ -1,0 +1,263 @@
+union SharedStorage {
+    struct {
+        // s_a: [2][32][128], k 为行, m 为列, m 维度 128 float 连续
+        float s_a[2][BM][BK];
+        // s_b: [2][32][128], k 为行, n 为列, n 维度 128 float 连续
+        float s_b[2][BK][BN];
+    } compute;
+    
+    struct {
+        float s_out[2][32][128]; // [stage][row_in_chunk][col]
+    } epilogue;
+};
+__global__ void __launch_bounds__(256, 1) sgemm_2d_Register_bank_improve(
+    int M, int N, int K,
+    const float* __restrict__ A,
+    const float* __restrict__ B,
+    float* __restrict__ C) 
+{
+    // -------------------------------------------------------------------------
+    // 1. 基础分块参数与共享内存定义
+    // -------------------------------------------------------------------------
+    constexpr int TM = 8;
+    constexpr int TN = 8;
+
+
+    extern __shared__ char smem_raw[];
+    
+    // 2. 强转为结构体指针 (名称仍然叫 smem)
+    SharedStorage* smem = reinterpret_cast<SharedStorage*>(smem_raw);
+
+    const int tid = threadIdx.x; // 0 ~ 255
+
+    // 预先计算好的线程解耦常数
+    const int lane_16 = tid % 16;         // 0 ~ 15，控制 B/C 矩阵列解耦组
+    const int thread_m = (tid / 16) * 8;   // 0, 8, 16 ... 120，控制 A/C 矩阵行起始
+
+    const int block_row = blockIdx.y * BM;
+    const int block_col = blockIdx.x * BN;
+
+    // 调整全局基指针到当前 Block 起始位置
+    A += block_row * K;
+    B += block_col;
+
+    // 线程私有 MMA 累加寄存器 (8x8)
+    float accum[TM][TN] = {0.0f};
+
+    // -------------------------------------------------------------------------
+    // 2. 流水线预热 (Prologue): 异步加载第 0 块数据到 Buffer 0
+    // -------------------------------------------------------------------------
+    int write_stage = 0;
+
+    // 加载 A 矩阵到 s_a (转置存入 SMEM: s_a[write_stage][k][m])
+    #pragma unroll
+    for (int i = 0; i < 4; ++i) {
+        int load_idx = tid + i * 256; // 0 ~ 1023
+        int r = load_idx / 8;        // A 矩阵全局/SMEM 行 (0 ~ 127)
+        int c_f4 = load_idx % 8;     // A 矩阵全局/SMEM 列 float4 索引 (0 ~ 7)
+
+        cp_async_cg(&smem->compute.s_a[write_stage][r][c_f4 * 4], A + r * K + c_f4 * 4);
+    }
+
+    // 异步加载 B 矩阵到 s_b (直接存入 SMEM: s_b[write_stage][k][n])
+    #pragma unroll
+    for (int i = 0; i < 4; ++i) {
+        int load_idx = tid + i * 256; // 0 ~ 1023
+        int r = load_idx / 32;       // B 矩阵全局行 (0 ~ 31)
+        int c_f4 = load_idx % 32;    // B 矩阵全局列 float4 索引 (0 ~ 31)
+
+        cp_async_cg(&smem->compute.s_b[write_stage][r][c_f4 * 4], B + r * N + c_f4 * 4);
+    }
+
+    // 提交异步加载组并等待完成
+    asm volatile("cp.async.commit_group;\n");
+    asm volatile("cp.async.wait_group 0;\n");
+    __syncthreads();
+
+    // -------------------------------------------------------------------------
+    // 3. Main Loop: 双缓冲计算与搬运重叠
+    // -------------------------------------------------------------------------
+    for (int k_step = BK; k_step < K; k_step += BK) {
+        // 推进全局指针
+        A += BK;
+        B += BK * N;
+
+        // 切换写入缓冲区索引 (0 -> 1, 1 -> 0)
+        write_stage ^= 1;
+
+        // --- Step 3A: 异步发射下一轮 (k_step) 数据到 write_stage ---
+        #pragma unroll
+        for (int i = 0; i < 4; ++i) {
+            int load_idx = tid + i * 256; // 0 ~ 1023
+            int r = load_idx / 8;        // A 矩阵全局/SMEM 行 (0 ~ 127)
+            int c_f4 = load_idx % 8;     // A 矩阵全局/SMEM 列 float4 索引 (0 ~ 7)
+
+            cp_async_cg(&smem->compute.s_a[write_stage][r][c_f4 * 4], A + r * K + c_f4 * 4);
+        }
+
+        #pragma unroll
+        for (int i = 0; i < 4; ++i) {
+            int load_idx = tid + i * 256;
+            int r = load_idx / 32;
+            int c_f4 = load_idx % 32;
+
+            cp_async_cg(&smem->compute.s_b[write_stage][r][c_f4 * 4], B + r * N + c_f4 * 4);
+        }
+
+        asm volatile("cp.async.commit_group;\n");
+
+        // --- Step 3B: 计算当前 read_stage 缓冲区的数据 ---
+        int read_stage = write_stage ^ 1;
+
+        #pragma unroll
+        for (int k = 0; k < BK; ++k) {
+            // 1. 读取 A 矩阵数据 (2 条 LDS.128 指令，100% Broadcast，0 Bank 冲突)
+            float a_val[8];
+            #pragma unroll
+            for (int m = 0; m < 8; ++m) {
+                a_val[m] = smem->compute.s_a[read_stage][thread_m + m][k];
+            }
+
+            // 2. 读取 B 矩阵数据 (2 条 LDS.128 指令，解耦跨列读取，0 Bank 冲突)
+            const float4* sb_ptr = reinterpret_cast<const float4*>(
+                &smem->compute.s_b[read_stage][k][0]
+            );
+            float4 reg_b0 = sb_ptr[lane_16];      // 取列 0~3 对应 float4
+            float4 reg_b1 = sb_ptr[lane_16 + 16]; // 取列 64~67 对应 float4
+
+            float b_val[8] = {
+                reg_b0.x, reg_b0.y, reg_b0.z, reg_b0.w,
+                reg_b1.x, reg_b1.y, reg_b1.z, reg_b1.w
+            };
+
+            // 3. 外积 MMA 计算 (纯寄存器 FMA 操作)
+            #pragma unroll
+            for (int m = 0; m < 8; ++m) {
+                #pragma unroll
+                for (int n = 0; n < 8; ++n) {
+                    accum[m][n] += a_val[m] * b_val[n];
+                }
+            }
+        }
+
+        // --- Step 3C: 等待下一轮传输完成 ---
+        asm volatile("cp.async.wait_group 0;\n");
+        __syncthreads();
+    }
+
+    // -------------------------------------------------------------------------
+    // 4. Epilogue Loop: 处理最后一轮留在 Buffer 里的数据
+    // -------------------------------------------------------------------------
+    int read_stage = write_stage;
+
+    #pragma unroll
+    for (int k = 0; k < BK; ++k) {
+        float a_val[8];
+        #pragma unroll
+        for (int m = 0; m < 8; ++m) {
+            a_val[m] = smem->compute.s_a[read_stage][thread_m + m][k];
+        }
+
+        const float4* sb_ptr = reinterpret_cast<const float4*>(
+            &smem->compute.s_b[read_stage][k][0]
+        );
+        float4 reg_b0 = sb_ptr[lane_16];
+        float4 reg_b1 = sb_ptr[lane_16 + 16];
+
+        float b_val[8] = {
+            reg_b0.x, reg_b0.y, reg_b0.z, reg_b0.w,
+            reg_b1.x, reg_b1.y, reg_b1.z, reg_b1.w
+        };
+
+        #pragma unroll
+        for (int m = 0; m < 8; ++m) {
+            #pragma unroll
+            for (int n = 0; n < 8; ++n) {
+                accum[m][n] += a_val[m] * b_val[n];
+            }
+        }
+    }
+
+// -------------------------------------------------------------------------
+    // 5. 写回全局内存 C (SMEM 复用 + 双缓冲乒乓重排写回)
+    // -------------------------------------------------------------------------
+    __syncthreads(); // 彻底结束主计算阶段对 SMEM 的读取，准备复用 SMEM
+
+    // --- 辅助 Lambda A: 将线程私有的 accum 寄存器写入 SMEM (指定 stage) ---
+    auto write_reg_to_smem = [&](int chunk, int stage) {
+        // 256 个线程中，只有负责当前 chunk 行范围 (32 行) 的 64 个线程参与写入
+        if (tid / 64 == chunk) {
+            int local_r_base = thread_m % 32; // 在当前 chunk 内的相对行号 (0, 8, 16, 24)
+
+            #pragma unroll
+            for (int m = 0; m < 8; ++m) {
+                int r = local_r_base + m; // 相对行号 0 ~ 31
+
+                // 1. 写入前 4 列 (accum[m][0..3])
+                float4 val0 = make_float4(accum[m][0], accum[m][1], accum[m][2], accum[m][3]);
+                *reinterpret_cast<float4*>(&smem->epilogue.s_out[stage][r][lane_16 * 4]) = val0;
+
+                // 2. 写入后 4 列 (accum[m][4..7])
+                float4 val1 = make_float4(accum[m][4], accum[m][5], accum[m][6], accum[m][7]);
+                *reinterpret_cast<float4*>(&smem->epilogue.s_out[stage][r][(lane_16 + 16) * 4]) = val1;
+            }
+        }
+    };
+
+    // --- 辅助 Lambda B: 重新分工 256 个线程，从 SMEM 批量 100% 线性合并写回 GMEM ---
+    auto store_smem_to_gmem = [&](int chunk, int stage) {
+        int chunk_g_row_base = block_row + chunk * 32; // 当前 Chunk 在 Global C 中的起始行
+
+        #pragma unroll
+        for (int i = 0; i < 4; ++i) {
+            int load_idx = tid + i * 256; // 0 ~ 1023 (对应 32x128 块内的 1024 个 float4)
+            int r = load_idx / 32;        // Chunk 内行号 (0 ~ 31)
+            int c_f4 = load_idx % 32;     // Chunk 内列 float4 索引 (0 ~ 31)
+
+            // 从 SMEM 批量向量化读出
+            float4 val = *reinterpret_cast<const float4*>(
+                &smem->epilogue.s_out[stage][r][c_f4 * 4]
+            );
+
+            // 100% 理想 1D 线性合并写入 Global Memory C (STG.128)
+            int g_row = chunk_g_row_base + r;
+            int g_col = block_col + c_f4 * 4;
+
+            *reinterpret_cast<float4*>(&C[g_row * N + g_col]) = val;
+        }
+    };
+
+    // =========================================================================
+    // 流水线阶段 1: Prologue - 预写入 Chunk 0 到 SMEM Buffer 0
+    // =========================================================================
+    write_reg_to_smem(0, 0);
+    __syncthreads(); // 屏障：确保 Chunk 0 彻底在 SMEM Buffer 0 中就绪
+
+    // =========================================================================
+    // 流水线阶段 2: Main Pipeline Loop - 重叠处理 Chunk 0~2 显存写回 与 Chunk 1~3 SMEM 填充
+    // =========================================================================
+    #pragma unroll
+    for (int chunk = 0; chunk < 3; ++chunk) {
+        int cur_stage = chunk % 2;        // 当前用于写回 GMEM 的 SMEM Buffer (0 或 1)
+        int next_stage = (chunk + 1) % 2; // 下一轮准备填入 SMEM 的 Buffer (1 或 0)
+        int next_chunk = chunk + 1;
+
+        // 1. 将下一个 Chunk 的寄存器数据写入 next_stage SMEM Buffer
+        write_reg_to_smem(next_chunk, next_stage);
+
+        // 2. 将当前 cur_stage SMEM Buffer 中的数据写回 GMEM (并发重叠执行)
+        store_smem_to_gmem(chunk, cur_stage);
+
+        // 3. 屏障同步：
+        //    a. 确保 next_stage 的 SMEM 写入彻底完成，可供下一轮安全读取
+        //    b. 确保 cur_stage 的 SMEM 读取彻底完成，可供下下轮安全覆写
+        __syncthreads();
+    }
+
+    // =========================================================================
+    // 流水线阶段 3: Epilogue Drain - 收尾写回最后一个 Chunk 3
+    // =========================================================================
+    // Chunk 3 此时已经在 Buffer 1 (stage 1) 中就绪
+    store_smem_to_gmem(3, 1);
+}
+

@@ -1,0 +1,60 @@
+// 假设 smem_A 是指向 shared memory 中 128*64 half 矩阵的指针
+__shared__ half smem_A[128 * 64];
+
+int lane_id = threadIdx.x % 32; // 当前线程在 Warp 中的 ID (0 ~ 31)
+
+// 1. 计算当前线程属于 4 个 8x8 矩阵块中的哪一个 (0, 1, 2, 3)
+int matrix_id   = lane_id / 8; // 线程 0~7 -> 0;  8~15 -> 1;  16~23 -> 2;  24~31 -> 3
+int row_in_tile = lane_id % 8; // 线程在 8x8 块内部负责的行号 (0 ~ 7)
+
+// 2. 根据 matrix_id 算出在 16x16 矩阵中的逻辑行号和逻辑列号
+int tile_row = (matrix_id / 2) * 8 + row_in_tile; // matrix 0,1 在上半部(0~7行)；2,3 在下半部(8~15行)
+int tile_col = (matrix_id % 2) * 8;              // matrix 0,2 在左半部(第0列)；1,3 在右半部(第8列)
+
+// 3. 计算在 128x64 行主序矩阵 A 中的一维下标 (Stride = 64)
+int stride = 64;
+half* thread_ptr = &smem_A[tile_row * stride + tile_col];
+
+// 4. 将 C++ 泛型指针转换为 PTX 要求的 32 位 Shared Memory 相对地址
+uint32_t smem_addr = __cvta_generic_to_sharedctas(thread_ptr);
+
+
+
+
+uint32_t a0, a1, a2, a3;
+
+// 执行非转置加载
+asm volatile(
+    "ldmatrix.sync.aligned.m8n8.x4.shared.b16 "
+    "{%0, %1, %2, %3}, [%4];\n"
+    : "=r"(a0), "=r"(a1), "=r"(a2), "=r"(a3)
+    : "r"(smem_addr)
+);
+
+/* 
+ * 此时以 Thread 0 (lane_id = 0) 为例，寄存器收集到的数据（保持原行主序）：
+ * a0 存的是 A[0][0] 和 A[0][1]   (即一维下标 A[0]  和 A[1])
+ * a1 存的是 A[0][8] 和 A[0][9]   (即一维下标 A[8]  和 A[9])
+ * a2 存的是 A[8][0] 和 A[8][1]   (即一维下标 A[512] 和 A[513])
+ * a3 存的是 A[8][8] 和 A[8][9]   (即一维下标 A[520] 和 A[521])
+ */
+
+
+
+ uint32_t a0, a1, a2, a3;
+
+// 执行转置加载
+asm volatile(
+    "ldmatrix.sync.aligned.m8n8.x4.trans.shared.b16 "
+    "{%0, %1, %2, %3}, [%4];\n"
+    : "=r"(a0), "=r"(a1), "=r"(a2), "=r"(a3)
+    : "r"(smem_addr) // 注意：传入的地址和非转置一模一样！
+);
+
+/* 
+ * 此时以 Thread 0 (lane_id = 0) 为例，寄存器收集到的数据（硬件内部完成了转置）：
+ * a0 存的是 A[0][0] 和 A[1][0]   (即一维下标 A[0]   和 A[64])  <-- 变成了按列取数据！
+ * a1 存的是 A[0][8] 和 A[1][8]   (即一维下标 A[8]   和 A[72])
+ * a2 存的是 A[8][0] 和 A[9][0]   (即一维下标 A[512] 和 A[576])
+ * a3 存的是 A[8][8] 和 A[9][8]   (即一维下标 A[520] 和 A[584])
+ */
